@@ -6,40 +6,32 @@ function App() {
   useEffect(() => {
     const canvas = document.getElementById("canvas");
     canvas.addEventListener("mousedown", handleClick);
-    return () => canvas.removeEventListener("mousedown", handleClick);
   }, []);
 
   const [dots, setDots] = useState([]);
-  const [dotIndex, setDotIndex] = useState(0);
+  const [cache, setCache] = useState([]);
 
-  const handleClick = ({ offsetX, offsetY }) => {
+  const handleClick = ({ clientX, clientY }) => {
     const newDot = {
-      x: offsetX,
-      y: offsetY,
+      x: clientX,
+      y: clientY,
     };
-
-    setDots((prev) => {
-      if (dotIndex !== prev.length) {
-        prev[dotIndex] = newDot;
-        return [...prev];
-      } else {
-        return [...prev, newDot];
-      }
-    });
-    setDotIndex((prev) => prev + 1);
+    setDots((prevDots) => [...prevDots, newDot]);
   };
 
   const handleUndo = (e) => {
-    if (dotIndex > 0) {
-      setDotIndex((prev) => prev - 1);
+    if (dots.length) {
+      const dotToCache = dots.pop();
+      setCache((prevCache) => [...prevCache, dotToCache]);
+      setDots((prevDots) => [...prevDots]);
+    }
+  };
 
-      setDots((prev) => {
-        prev[dotIndex] = {
-          ...prev[dotIndex],
-          hidden: true,
-        };
-        return [...prev];
-      });
+  const handleRedo = (e) => {
+    if (cache.length) {
+      const dotToRestore = cache.pop();
+      setDots((prevDots) => [...prevDots, dotToRestore]);
+      setCache((prevCache) => [...prevCache]);
     }
   };
 
@@ -47,11 +39,11 @@ function App() {
     <>
       <div className="controls">
         <button onClick={handleUndo}>Undo</button>
-        {/* <button onClick={handleRedo}>Redo</button> */}
+        <button onClick={handleRedo}>Redo</button>
       </div>
       <div className="canvas" id="canvas">
-        {dots.map((dot, i) => {
-          if (!dot.hidden) {
+        {dots.length &&
+          dots.map((dot, i) => {
             return (
               <div
                 className="dot"
@@ -59,8 +51,7 @@ function App() {
                 key={`dot-${i}`}
               ></div>
             );
-          }
-        })}
+          })}
       </div>
     </>
   );
